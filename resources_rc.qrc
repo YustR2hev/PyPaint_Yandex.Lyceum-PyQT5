@@ -1,0 +1,27 @@
+<RCC>
+  <qresource prefix="icons">
+    <file alias="blue-folder-open-image.png">icons/blue-folder-open-image.png</file>
+    <file alias="border-weight.png">icons/border-weight.png</file>
+    <file alias="disk.png">icons/disk.png</file>
+    <file alias="document-image.png">icons/document-image.png</file>
+    <file alias="edit-bold.png">icons/edit-bold.png</file>
+    <file alias="edit-italic.png">icons/edit-italic.png</file>
+    <file alias="edit-underline.png">icons/edit-underline.png</file>
+    <file alias="edit.png">icons/edit.png</file>
+    <file alias="eraser.png">icons/eraser.png</file>
+    <file alias="layer-shape-ellipse.png">icons/layer-shape-ellipse.png</file>
+    <file alias="layer-shape-line.png">icons/layer-shape-line.png</file>
+    <file alias="layer-shape-polygon.png">icons/layer-shape-polygon.png</file>
+    <file alias="layer-shape-polyline.png">icons/layer-shape-polyline.png</file>
+    <file alias="layer-shape.png">icons/layer-shape.png</file>
+    <file alias="paint-brush.png">icons/paint-brush.png</file>
+    <file alias="paint-can-color.png">icons/paint-can-color.png</file>
+    <file alias="paint-can.png">icons/paint-can.png</file>
+    <file alias="pencil.png">icons/pencil.png</file>
+    <file alias="pipette.png">icons/pipette.png</file>
+    <file alias="printer.png">icons/printer.png</file>
+    <file alias="selection-poly.png">icons/selection-poly.png</file>
+    <file alias="selection.png">icons/selection.png</file>
+    <file alias="spray.png">icons/spray.png</file>
+  </qresource>
+</RCC>
