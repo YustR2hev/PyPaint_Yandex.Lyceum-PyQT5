@@ -1,29 +1,24 @@
+from PyQt5.QtCore import Qt, QPoint, QRect, QTimer, pyqtSignal
+from PyQt5.QtGui import QPainter, QPen, QBrush, QColor, QFont, QPixmap, QIcon, QImage, QTransform
+from PyQt5.QtWidgets import QMainWindow, QButtonGroup, QComboBox, \
+    QFontComboBox, QLabel, QApplication, QSlider, QColorDialog, QFileDialog
+
 import sys
-import random
 import types
-
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-
-from PyQt5.QtGui import QPainter, QPen, QBrush, QColor
-from PyQt5.QtCore import Qt
+import random
 
 from mainwindow import Ui_MainWindow
+
+EASEL_DIMENSIONS = 600, 400
+
+SELECTION_PEN = QPen(QColor(0xff, 0xff, 0xff), 1, Qt.DashLine)
+PREVIEW_PEN = QPen(QColor(0xff, 0xff, 0xff), 1, Qt.SolidLine)
+
+FONT_SIZES = [7, 8, 9, 10, 11, 12, 13, 14, 18, 24, 36, 48, 64, 72, 96, 144, 288]
 
 BRUSH_MULT = 3
 SPRAY_PAINT_MULT = 5
 SPRAY_PAINT_N = 100
-
-COLORS = [
-    '#000000', '#82817f', '#820300', '#868417', '#007e03', '#037e7b', '#040079',
-    '#81067a', '#7f7e45', '#05403c', '#0a7cf6', '#093c7e', '#7e07f9', '#7c4002',
-
-    '#ffffff', '#c1c1c1', '#f70406', '#fffd00', '#08fb01', '#0bf8ee', '#0000fa',
-    '#b92fc2', '#fffc91', '#00fd83', '#87f9f9', '#8481c4', '#dc137d', '#fb803c',
-]
-
-FONT_SIZES = [7, 8, 9, 10, 11, 12, 13, 14, 18, 24, 36, 48, 64, 72, 96, 144, 288]
 
 MODES = [
     'eraser', 'fill',
@@ -35,10 +30,13 @@ MODES = [
     'ellipse'
 ]
 
-CANVAS_DIMENSIONS = 600, 400
+COLORS = [
+    '#000000', '#82817f', '#820300', '#868417', '#007e03', '#037e7b', '#040079',
+    '#81067a', '#7f7e45', '#05403c', '#0a7cf6', '#093c7e', '#7e07f9', '#7c4002',
 
-SELECTION_PEN = QPen(QColor(0xff, 0xff, 0xff), 1, Qt.DashLine)
-PREVIEW_PEN = QPen(QColor(0xff, 0xff, 0xff), 1, Qt.SolidLine)
+    '#ffffff', '#c1c1c1', '#f70406', '#fffd00', '#08fb01', '#0bf8ee', '#0000fa',
+    '#b92fc2', '#fffc91', '#00fd83', '#87f9f9', '#8481c4', '#dc137d', '#fb803c',
+]
 
 
 def build_font(config):
@@ -50,7 +48,7 @@ def build_font(config):
     return font
 
 
-class Canvas(QLabel):
+class Easel(QLabel):
     mode = 'rectangle'
 
     primary_color = QColor(Qt.black)
@@ -81,7 +79,7 @@ class Canvas(QLabel):
         self.reset()
 
     def reset(self):
-        self.setPixmap(QPixmap(*CANVAS_DIMENSIONS))
+        self.setPixmap(QPixmap(*EASEL_DIMENSIONS))
 
         self.pixmap().fill(self.background_color)
 
@@ -129,86 +127,86 @@ class Canvas(QLabel):
             self.timer_event = None
             timer_event(final=True)
 
-    def mousePressEvent(self, e):
+    def mousePressEvent(self, event):
         fn = getattr(self, "%s_mousePressEvent" % self.mode, None)
         if fn:
-            return fn(e)
+            return fn(event)
 
-    def mouseMoveEvent(self, e):
+    def mouseMoveEvent(self, event):
         fn = getattr(self, "%s_mouseMoveEvent" % self.mode, None)
         if fn:
-            return fn(e)
+            return fn(event)
 
-    def mouseReleaseEvent(self, e):
+    def mouseReleaseEvent(self, event):
         fn = getattr(self, "%s_mouseReleaseEvent" % self.mode, None)
         if fn:
-            return fn(e)
+            return fn(event)
 
-    def mouseDoubleClickEvent(self, e):
+    def mouseDoubleClickEvent(self, event):
         fn = getattr(self, "%s_mouseDoubleClickEvent" % self.mode, None)
         if fn:
-            return fn(e)
+            return fn(event)
 
-    def generic_mousePressEvent(self, e):
-        self.last_pos = e.pos()
+    def generic_mousePressEvent(self, event):
+        self.last_pos = event.pos()
 
-        if e.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton:
             self.active_color = self.primary_color
         else:
             self.active_color = self.secondary_color
 
-    def generic_mouseReleaseEvent(self, e):
+    def generic_mouseReleaseEvent(self, event):
         self.last_pos = None
 
-    def eraser_mousePressEvent(self, e):
-        self.generic_mousePressEvent(e)
+    def eraser_mousePressEvent(self, event):
+        self.generic_mousePressEvent(event)
 
-    def eraser_mouseMoveEvent(self, e):
+    def eraser_mouseMoveEvent(self, event):
         if self.last_pos:
             p = QPainter(self.pixmap())
             p.setPen(QPen(self.eraser_color, 30, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            p.drawLine(self.last_pos, e.pos())
+            p.drawLine(self.last_pos, event.pos())
 
-            self.last_pos = e.pos()
+            self.last_pos = event.pos()
             self.update()
 
-    def eraser_mouseReleaseEvent(self, e):
-        self.generic_mouseReleaseEvent(e)
+    def eraser_mouseReleaseEvent(self, event):
+        self.generic_mouseReleaseEvent(event)
 
-    def pen_mousePressEvent(self, e):
-        self.generic_mousePressEvent(e)
+    def pen_mousePressEvent(self, event):
+        self.generic_mousePressEvent(event)
 
-    def pen_mouseMoveEvent(self, e):
+    def pen_mouseMoveEvent(self, event):
         if self.last_pos:
             p = QPainter(self.pixmap())
             p.setPen(QPen(self.active_color, self.config['size'], Qt.SolidLine, Qt.SquareCap, Qt.RoundJoin))
-            p.drawLine(self.last_pos, e.pos())
+            p.drawLine(self.last_pos, event.pos())
 
-            self.last_pos = e.pos()
+            self.last_pos = event.pos()
             self.update()
 
-    def pen_mouseReleaseEvent(self, e):
-        self.generic_mouseReleaseEvent(e)
+    def pen_mouseReleaseEvent(self, event):
+        self.generic_mouseReleaseEvent(event)
 
-    def brush_mousePressEvent(self, e):
-        self.generic_mousePressEvent(e)
+    def brush_mousePressEvent(self, event):
+        self.generic_mousePressEvent(event)
 
-    def brush_mouseMoveEvent(self, e):
+    def brush_mouseMoveEvent(self, event):
         if self.last_pos:
             p = QPainter(self.pixmap())
             p.setPen(QPen(self.active_color, self.config['size'] * BRUSH_MULT, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            p.drawLine(self.last_pos, e.pos())
+            p.drawLine(self.last_pos, event.pos())
 
-            self.last_pos = e.pos()
+            self.last_pos = event.pos()
             self.update()
 
-    def brush_mouseReleaseEvent(self, e):
-        self.generic_mouseReleaseEvent(e)
+    def brush_mouseReleaseEvent(self, event):
+        self.generic_mouseReleaseEvent(event)
 
-    def spray_mousePressEvent(self, e):
-        self.generic_mousePressEvent(e)
+    def spray_mousePressEvent(self, event):
+        self.generic_mousePressEvent(event)
 
-    def spray_mouseMoveEvent(self, e):
+    def spray_mouseMoveEvent(self, event):
         if self.last_pos:
             p = QPainter(self.pixmap())
             p.setPen(QPen(self.active_color, 1))
@@ -216,27 +214,27 @@ class Canvas(QLabel):
             for n in range(self.config['size'] * SPRAY_PAINT_N):
                 xo = random.gauss(0, self.config['size'] * SPRAY_PAINT_MULT)
                 yo = random.gauss(0, self.config['size'] * SPRAY_PAINT_MULT)
-                p.drawPoint(e.x() + xo, e.y() + yo)
+                p.drawPoint(event.x() + xo, event.y() + yo)
 
         self.update()
 
-    def spray_mouseReleaseEvent(self, e):
-        self.generic_mouseReleaseEvent(e)
+    def spray_mouseReleaseEvent(self, event):
+        self.generic_mouseReleaseEvent(event)
 
-    def keyPressEvent(self, e):
+    def keyPressEvent(self, event):
         if self.mode == 'text':
-            if e.key() == Qt.Key_Backspace:
+            if event.key() == Qt.Key_Backspace:
                 self.current_text = self.current_text[:-1]
             else:
-                self.current_text = self.current_text + e.text()
+                self.current_text = self.current_text + event.text()
 
-    def text_mousePressEvent(self, e):
-        if e.button() == Qt.LeftButton and self.current_pos is None:
-            self.current_pos = e.pos()
+    def text_mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and self.current_pos is None:
+            self.current_pos = event.pos()
             self.current_text = ""
             self.timer_event = self.text_timerEvent
 
-        elif e.button() == Qt.LeftButton:
+        elif event.button() == Qt.LeftButton:
 
             self.timer_cleanup()
             p = QPainter(self.pixmap())
@@ -250,7 +248,7 @@ class Canvas(QLabel):
 
             self.reset_mode()
 
-        elif e.button() == Qt.RightButton and self.current_pos:
+        elif event.button() == Qt.RightButton and self.current_pos:
             self.reset_mode()
 
     def text_timerEvent(self, final=False):
@@ -272,16 +270,16 @@ class Canvas(QLabel):
         self.last_config = self.config.copy()
         self.update()
 
-    def fill_mousePressEvent(self, e):
+    def fill_mousePressEvent(self, event):
 
-        if e.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton:
             self.active_color = self.primary_color
         else:
             self.active_color = self.secondary_color
 
         image = self.pixmap().toImage()
         w, h = image.width(), image.height()
-        x, y = e.x(), e.y()
+        x, y = event.x(), event.y()
 
         target_color = image.pixel(x, y)
 
@@ -310,21 +308,21 @@ class Canvas(QLabel):
 
         self.update()
 
-    def dropper_mousePressEvent(self, e):
-        c = self.pixmap().toImage().pixel(e.pos())
+    def dropper_mousePressEvent(self, event):
+        c = self.pixmap().toImage().pixel(event.pos())
         hex = QColor(c).name()
 
-        if e.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton:
             self.set_primary_color(hex)
             self.primary_color_updated.emit(hex)
 
-        elif e.button() == Qt.RightButton:
+        elif event.button() == Qt.RightButton:
             self.set_secondary_color(hex)
             self.secondary_color_updated.emit(hex)
 
-    def generic_shape_mousePressEvent(self, e):
-        self.origin_pos = e.pos()
-        self.current_pos = e.pos()
+    def generic_shape_mousePressEvent(self, event):
+        self.origin_pos = event.pos()
+        self.current_pos = event.pos()
         self.timer_event = self.generic_shape_timerEvent
 
     def generic_shape_timerEvent(self, final=False):
@@ -345,10 +343,10 @@ class Canvas(QLabel):
         self.update()
         self.last_pos = self.current_pos
 
-    def generic_shape_mouseMoveEvent(self, e):
-        self.current_pos = e.pos()
+    def generic_shape_mouseMoveEvent(self, event):
+        self.current_pos = event.pos()
 
-    def generic_shape_mouseReleaseEvent(self, e):
+    def generic_shape_mouseReleaseEvent(self, event):
         if self.last_pos:
             self.timer_cleanup()
 
@@ -357,14 +355,14 @@ class Canvas(QLabel):
 
             if self.config['fill']:
                 p.setBrush(QBrush(self.secondary_color))
-            getattr(p, self.active_shape_fn)(QRect(self.origin_pos, e.pos()), *self.active_shape_args)
+            getattr(p, self.active_shape_fn)(QRect(self.origin_pos, event.pos()), *self.active_shape_args)
             self.update()
 
         self.reset_mode()
 
-    def line_mousePressEvent(self, e):
-        self.origin_pos = e.pos()
-        self.current_pos = e.pos()
+    def line_mousePressEvent(self, event):
+        self.origin_pos = event.pos()
+        self.current_pos = event.pos()
         self.preview_pen = PREVIEW_PEN
         self.timer_event = self.line_timerEvent
 
@@ -382,31 +380,31 @@ class Canvas(QLabel):
         self.update()
         self.last_pos = self.current_pos
 
-    def line_mouseMoveEvent(self, e):
-        self.current_pos = e.pos()
+    def line_mouseMoveEvent(self, event):
+        self.current_pos = event.pos()
 
-    def line_mouseReleaseEvent(self, e):
+    def line_mouseReleaseEvent(self, event):
         if self.last_pos:
             self.timer_cleanup()
 
             p = QPainter(self.pixmap())
             p.setPen(QPen(self.primary_color, self.config['size'], Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
 
-            p.drawLine(self.origin_pos, e.pos())
+            p.drawLine(self.origin_pos, event.pos())
             self.update()
 
         self.reset_mode()
 
-    def generic_poly_mousePressEvent(self, e):
-        if e.button() == Qt.LeftButton:
+    def generic_poly_mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
             if self.history_pos:
-                self.history_pos.append(e.pos())
+                self.history_pos.append(event.pos())
             else:
-                self.history_pos = [e.pos()]
-                self.current_pos = e.pos()
+                self.history_pos = [event.pos()]
+                self.current_pos = event.pos()
                 self.timer_event = self.generic_poly_timerEvent
 
-        elif e.button() == Qt.RightButton and self.history_pos:
+        elif event.button() == Qt.RightButton and self.history_pos:
             self.timer_cleanup()
             self.reset_mode()
 
@@ -429,10 +427,10 @@ class Canvas(QLabel):
         self.last_pos = self.current_pos
         self.last_history = self.history_pos + [self.current_pos]
 
-    def generic_poly_mouseMoveEvent(self, e):
-        self.current_pos = e.pos()
+    def generic_poly_mouseMoveEvent(self, event):
+        self.current_pos = event.pos()
 
-    def generic_poly_mouseDoubleClickEvent(self, e):
+    def generic_poly_mouseDoubleClickEvent(self, event):
         self.timer_cleanup()
         p = QPainter(self.pixmap())
         p.setPen(QPen(self.primary_color, self.config['size'], Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
@@ -440,82 +438,82 @@ class Canvas(QLabel):
         if self.secondary_color:
             p.setBrush(QBrush(self.secondary_color))
 
-        getattr(p, self.active_shape_fn)(*self.history_pos + [e.pos()])
+        getattr(p, self.active_shape_fn)(*self.history_pos + [event.pos()])
         self.update()
         self.reset_mode()
 
-    def polyline_mousePressEvent(self, e):
+    def polyline_mousePressEvent(self, event):
         self.active_shape_fn = 'drawPolyline'
         self.preview_pen = PREVIEW_PEN
-        self.generic_poly_mousePressEvent(e)
+        self.generic_poly_mousePressEvent(event)
 
     def polyline_timerEvent(self, final=False):
         self.generic_poly_timerEvent(final)
 
-    def polyline_mouseMoveEvent(self, e):
-        self.generic_poly_mouseMoveEvent(e)
+    def polyline_mouseMoveEvent(self, event):
+        self.generic_poly_mouseMoveEvent(event)
 
-    def polyline_mouseDoubleClickEvent(self, e):
-        self.generic_poly_mouseDoubleClickEvent(e)
+    def polyline_mouseDoubleClickEvent(self, event):
+        self.generic_poly_mouseDoubleClickEvent(event)
 
-    def rect_mousePressEvent(self, e):
+    def rect_mousePressEvent(self, event):
         self.active_shape_fn = 'drawRect'
         self.active_shape_args = ()
         self.preview_pen = PREVIEW_PEN
-        self.generic_shape_mousePressEvent(e)
+        self.generic_shape_mousePressEvent(event)
 
     def rect_timerEvent(self, final=False):
         self.generic_shape_timerEvent(final)
 
-    def rect_mouseMoveEvent(self, e):
-        self.generic_shape_mouseMoveEvent(e)
+    def rect_mouseMoveEvent(self, event):
+        self.generic_shape_mouseMoveEvent(event)
 
-    def rect_mouseReleaseEvent(self, e):
-        self.generic_shape_mouseReleaseEvent(e)
+    def rect_mouseReleaseEvent(self, event):
+        self.generic_shape_mouseReleaseEvent(event)
 
-    def polygon_mousePressEvent(self, e):
+    def polygon_mousePressEvent(self, event):
         self.active_shape_fn = 'drawPolygon'
         self.preview_pen = PREVIEW_PEN
-        self.generic_poly_mousePressEvent(e)
+        self.generic_poly_mousePressEvent(event)
 
     def polygon_timerEvent(self, final=False):
         self.generic_poly_timerEvent(final)
 
-    def polygon_mouseMoveEvent(self, e):
-        self.generic_poly_mouseMoveEvent(e)
+    def polygon_mouseMoveEvent(self, event):
+        self.generic_poly_mouseMoveEvent(event)
 
-    def polygon_mouseDoubleClickEvent(self, e):
-        self.generic_poly_mouseDoubleClickEvent(e)
+    def polygon_mouseDoubleClickEvent(self, event):
+        self.generic_poly_mouseDoubleClickEvent(event)
 
-    def ellipse_mousePressEvent(self, e):
+    def ellipse_mousePressEvent(self, event):
         self.active_shape_fn = 'drawEllipse'
         self.active_shape_args = ()
         self.preview_pen = PREVIEW_PEN
-        self.generic_shape_mousePressEvent(e)
+        self.generic_shape_mousePressEvent(event)
 
     def ellipse_timerEvent(self, final=False):
         self.generic_shape_timerEvent(final)
 
-    def ellipse_mouseMoveEvent(self, e):
-        self.generic_shape_mouseMoveEvent(e)
+    def ellipse_mouseMoveEvent(self, event):
+        self.generic_shape_mouseMoveEvent(event)
 
-    def ellipse_mouseReleaseEvent(self, e):
-        self.generic_shape_mouseReleaseEvent(e)
+    def ellipse_mouseReleaseEvent(self, event):
+        self.generic_shape_mouseReleaseEvent(event)
 
-    def roundrect_mousePressEvent(self, e):
+    def roundrect_mousePressEvent(self, event):
         self.active_shape_fn = 'drawRoundedRect'
         self.active_shape_args = (25, 25)
         self.preview_pen = PREVIEW_PEN
-        self.generic_shape_mousePressEvent(e)
+        self.generic_shape_mousePressEvent(event)
 
     def roundrect_timerEvent(self, final=False):
         self.generic_shape_timerEvent(final)
 
-    def roundrect_mouseMoveEvent(self, e):
-        self.generic_shape_mouseMoveEvent(e)
+    def roundrect_mouseMoveEvent(self, event):
+        self.generic_shape_mouseMoveEvent(event)
 
-    def roundrect_mouseReleaseEvent(self, e):
-        self.generic_shape_mouseReleaseEvent(e)
+    def roundrect_mouseReleaseEvent(self, event):
+        self.generic_shape_mouseReleaseEvent(event)
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -525,7 +523,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         self.horizontalLayout.removeWidget(self.canvas)
-        self.canvas = Canvas()
+        self.canvas = Easel()
         self.canvas.initialize()
         self.canvas.setMouseTracking(True)
         self.canvas.setFocusPolicy(Qt.StrongFocus)
@@ -550,11 +548,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             btn.setStyleSheet('QPushButton { background-color: %s; }' % hex)
             btn.hex = hex
 
-            def patch_mousePressEvent(self_, e):
-                if e.button() == Qt.LeftButton:
+            def patch_mousePressEvent(self_, event):
+                if event.button() == Qt.LeftButton:
                     self.set_primary_color(self_.hex)
 
-                elif e.button() == Qt.RightButton:
+                elif event.button() == Qt.RightButton:
                     self.set_secondary_color(self_.hex)
 
             btn.mousePressEvent = types.MethodType(patch_mousePressEvent, btn)
@@ -614,9 +612,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.show()
 
     def choose_color(self, callback):
-        dlg = QColorDialog()
-        if dlg.exec():
-            callback(dlg.selectedColor().name())
+        dilalog = QColorDialog()
+        if dilalog.exec():
+            callback(dilalog.selectedColor().name())
 
     def set_primary_color(self, hex):
         self.canvas.set_primary_color(hex)
@@ -646,21 +644,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pixmap = QPixmap()
             pixmap.load(path)
 
-            iw = pixmap.width()
-            ih = pixmap.height()
+            image_weight = pixmap.width()
+            image_height = pixmap.height()
 
-            cw, ch = CANVAS_DIMENSIONS
+            easel_weight, ch = EASEL_DIMENSIONS
 
-            if iw / cw < ih / ch:
-                pixmap = pixmap.scaledToWidth(cw)
+            if image_weight / easel_weight < image_height / ch:
+                pixmap = pixmap.scaledToWidth(easel_weight)
                 hoff = (pixmap.height() - ch) // 2
                 pixmap = pixmap.copy(
-                    QRect(QPoint(0, hoff), QPoint(cw, pixmap.height() - hoff))
+                    QRect(QPoint(0, hoff), QPoint(easel_weight, pixmap.height() - hoff))
                 )
 
-            elif iw / cw > ih / ch:
+            elif image_weight / easel_weight > image_height / ch:
                 pixmap = pixmap.scaledToHeight(ch)
-                woff = (pixmap.width() - cw) // 2
+                woff = (pixmap.width() - easel_weight) // 2
                 pixmap = pixmap.copy(
                     QRect(QPoint(woff, 0), QPoint(pixmap.width() - woff, ch))
                 )
@@ -675,10 +673,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pixmap.save(path, "PNG")
 
     def invert(self):
-        img = QImage(self.canvas.pixmap())
-        img.invertPixels()
+        image_ = QImage(self.canvas.pixmap())
+        image_.invertPixels()
         pixmap = QPixmap()
-        pixmap.convertFromImage(img)
+        pixmap.convertFromImage(image_)
         self.canvas.setPixmap(pixmap)
 
     def flip_horizontal(self):
